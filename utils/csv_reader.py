@@ -23,12 +23,16 @@ class csv_reader():
     def readline(self):
         # read line from file, skip empty lines
         line = ''
-        try:
-            while(line == ''):
-                line = self.f.readline()
-                line = line.rstrip()
-        except:
-            return None
+        while(line == ''):
+            # read line from file
+            line = self.f.readline()
+
+            # check for EOF
+            if line == '':
+                return None
+                
+            # strip \n
+            line = line.rstrip()
 
         # split into fields (string)
         val_s = line.split(',')

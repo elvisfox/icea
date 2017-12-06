@@ -2,20 +2,23 @@
 class pulse_counter:
 
 	def __init__(self, active_level, channel):
+		# configuration
 		self.active_level = active_level
 		self.state = active_level			# prevent detection of active edge at a very first sample
 		self.channel = channel
+
+		# state
 		self.became_act = 0
 		self.became_pasv = 0
 		self.period = 0
 		self.duty = 0
 		self.counter = 0
 
-	# read and process state from CSV dictionary
-	# returns True if active edge is detected
-	def sample(self, dict):
+	# process state from CSV dictionary
+	# return True if active edge is detected
+	def sample(self, line):
 		# read new state
-		new_state = bool(dict[self.channel])
+		new_state = bool(line[self.channel])
 
 		# proceed only if state changed
 		if new_state == self.state:
@@ -24,7 +27,7 @@ class pulse_counter:
 		#print('State changed! Now ' + str(new_state))
 
 		# read current time from dict
-		cur_time = dict['Time']
+		cur_time = line['Time']
 
 		# store new state
 		self.state = new_state
