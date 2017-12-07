@@ -1,5 +1,4 @@
 import sys
-import re
 
 from config import *
 from utils.csv_reader import csv_reader
@@ -44,7 +43,11 @@ while not first:
 print('First TDC found at time ' + str(crank_pos.prev_TDC_time))
 
 # prepare dict of output fields : units
-out_dict = { 'Time' : 'ms', 'RPM' : None }
+out_dict = { 
+	'Time' : 'ms', 
+	'RPM' : None,
+	'cyl' : None,
+}
 
 # init analog channels
 ana_avg = dict()
@@ -54,8 +57,6 @@ for ch, cfg in analog_channels.items():
 	if unit == None:
 		# not specified, use input units
 		unit = csv_rdr.unit_dict[cfg[0]]
-		# strip brackets
-		unit = re.sub('\(|\)', '', unit)
 	# add channel target name to output list
 	out_dict[ch] = unit
 	# create averager for each analog channel
@@ -88,6 +89,7 @@ while True:
 	# prepare output data
 	csv_out.values['Time'] = line['Time']
 	csv_out.values['RPM'] = crank_pos.rpm
+	csv_out.values['cyl'] = crank_pos.cylinder
 
 	# prepare analog channels
 	for ch in analog_channels:
@@ -95,7 +97,7 @@ while True:
 
 	# write to output file
 	csv_out.store()
-	print('TDC found: RPM = ' + str(crank_pos.rpm))
+	sys.stdout.write('Processing time ' + str(line['Time']) + ' ' + csv_rdr.unit_dict['Time'] + '      \r')
 
 # finalize stuff
-print('Success')
+print('\nSuccess')

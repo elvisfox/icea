@@ -1,5 +1,6 @@
 
 import io
+import re
 
 class csv_reader():
     def __init__(self, filename):
@@ -14,6 +15,9 @@ class csv_reader():
 
         # read units
         cols = self.f.readline()
+
+        # strip brackets
+        cols = re.sub('\(|\)', '', cols)
 
         # store units
         self.unit_dict = dict(zip(self.col_list, cols.rstrip().split(',')))

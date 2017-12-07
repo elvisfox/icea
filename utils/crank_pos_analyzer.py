@@ -1,9 +1,16 @@
 
 import math
+#from itertools import cycle
 
 from utils.pulse_counter import pulse_counter
 
 class crank_pos_analyzer:
+	def unsync(self):
+		self.in_sync = False
+		self.pulse_width = math.inf
+		self.cylinder = 0
+		self.expect_cyl = 0
+
 	def __init__(self, crank_pc, cam_pcs, pulses_per_cyl, skipped_pulses, TDC_pulse, firing_order):
 		# configuration
 		self.crank_pc = crank_pc
@@ -15,8 +22,7 @@ class crank_pos_analyzer:
 		self.no_of_cyl = len(firing_order)
 
 		# state
-		self.in_sync = False
-		self.pulse_width = math.inf
+		self.unsync()
 		self.prev_TDC_time = 0
 		self.rpm = 0
 
@@ -37,9 +43,10 @@ class crank_pos_analyzer:
 		if self.crank_pc.period > long_pulse_th:
 			# long pulse detected, check pulse counter
 			if self.in_sync and self.crank_pc.counter != self.pulses_per_cyl:
-				self.in_sync = False
-				print('Warning! Crank out of sync at t=' + str(self.crank_pc.became_act))
+				# sync lost
+				self.unsync()
 				#raise Exception('Crank out of sync')
+				print('Warning! Crank out of sync at t=' + str(self.crank_pc.became_act))
 			else:
 				#print('Fuck yea, long pulse')
 				
@@ -50,22 +57,51 @@ class crank_pos_analyzer:
 				self.in_sync = True
 
 		else:
-			# store pulse width
+			# regular pulse, store pulse width
 			self.pulse_width = self.crank_pc.period
 
-			# regular pulse, check for TDC
-			if self.in_sync and self.crank_pc.counter == self.TDC_pulse - 1:
-				# TDC detected, reset cams
-				for cam in self.cam_pcs:
-					cam.reset()
+		# check for TDC
+		if not( self.in_sync and self.crank_pc.counter == self.TDC_pulse - 1 ):
+			return False
 
-				# calculate rpm
-				self.rpm = 60e3 / ((self.crank_pc.became_act - self.prev_TDC_time) * self.no_of_cyl / 2)
+		# prev and current TDC time, used by calculations
+		this_time = self.crank_pc.became_act
+		prev_time = self.prev_TDC_time
 
-				# store TDC time
-				self.prev_TDC_time = self.crank_pc.became_act
+		# calculate rpm
+		self.rpm = 60e3 / ((this_time - prev_time) * self.no_of_cyl / 2)
 
-				return True
+		# count cam pulses
+		cam_pulses = list()
+		for cam in self.cam_pcs:
+			cam_pulses.append(cam.counter)
+		#print(cam_pulses)
 
-		# not a TDC
-		return False
+		# identify cylinder
+		for i, (c, p) in enumerate(self.firing_order):
+			if cam_pulses == p:
+				# store number
+				self.cylinder = c
+				# compare with expected
+				if(self.expect_cyl != 0 and self.expect_cyl != c):
+					print('Warning! Expected cylinder #' + str(self.expect_cyl) + ', got #' + str(c) )
+				# store next expected cyl
+				self.expect_cyl = self.firing_order[ (i + 1) % self.no_of_cyl ][0]
+				# exit loop
+				break
+		else:
+			print('Warning! Cylinder not identified!')
+			self.cylinder = 0
+			self.expect_cyl = 0
+
+		# compare with
+
+		# TDC detected, reset cams
+		for cam in self.cam_pcs:
+			cam.reset()
+
+		# store TDC time
+		self.prev_TDC_time = this_time
+
+		return True
+
