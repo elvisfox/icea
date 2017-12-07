@@ -2,6 +2,7 @@ import sys
 
 from config import *
 from utils.csv_reader import csv_reader
+from utils.csv_writer import csv_writer
 from utils.pulse_counter import pulse_counter
 from utils.crank_pos_analyzer import crank_pos_analyzer
 
@@ -40,6 +41,12 @@ while not first:
 
 print('First TDC found at time ' + str(crank_pos.prev_TDC_time))
 
+# TODO: prepare list of output fields
+out_list = ['Time', 'RPM']
+
+# open output file
+csv_out = csv_writer(output_file, out_list)
+
 # process data
 while True:
 	# read new line, break if EOF
@@ -50,9 +57,17 @@ while True:
 	# process sample in Crank Pos Analyzer
 	is_tdc = crank_pos.sample(line)
 
-	# print data if TDC is detected		(TODO: output to file)
-	if is_tdc:
-		print('TDC found: RPM = ' + str(crank_pos.rpm))
+	# skip until TDC is detected
+	if not is_tdc:
+		continue
+
+	# prepare output data
+	csv_out.values['Time'] = line['Time']
+	csv_out.values['RPM'] = crank_pos.rpm
+
+	# write to output file
+	csv_out.store()
+	print('TDC found: RPM = ' + str(crank_pos.rpm))
 
 # finalize stuff
 print('Success')

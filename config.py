@@ -1,4 +1,6 @@
 
+# output file
+output_file = 'ololo.csv'
 
 # this also sets number of cylinders
 firing_order = [ 1, 2, 3, 4, 5, 6 ]
