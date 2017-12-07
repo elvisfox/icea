@@ -9,7 +9,7 @@ class csv_writer():
 
     def __init__(self, filename, fields):
         # configuration
-        self.fields = fields
+        self.fields = fields.keys()
 
         # open input file
         self.f = open(filename, 'w')
@@ -17,8 +17,16 @@ class csv_writer():
         # prepare input dict
         self.reset()
 
+        # prepare field list with [units]
+        fields_str = list()
+        for k, v in fields.items():
+            if v != None:
+                fields_str.append(k + ' [' + v + ']')
+            else:
+                fields_str.append(k)
+
         # write header
-        header = ','.join(fields)
+        header = ','.join(fields_str)
         self.f.write(header + '\n')
 
     def store(self):

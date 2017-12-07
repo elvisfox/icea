@@ -1,9 +1,11 @@
 import sys
+import re
 
 from config import *
 from utils.csv_reader import csv_reader
 from utils.csv_writer import csv_writer
 from utils.pulse_counter import pulse_counter
+from utils.analog_average import analog_average
 from utils.crank_pos_analyzer import crank_pos_analyzer
 
 # open input file
@@ -41,11 +43,26 @@ while not first:
 
 print('First TDC found at time ' + str(crank_pos.prev_TDC_time))
 
-# TODO: prepare list of output fields
-out_list = ['Time', 'RPM']
+# prepare dict of output fields : units
+out_dict = { 'Time' : 'ms', 'RPM' : None }
+
+# init analog channels
+ana_avg = dict()
+for ch, cfg in analog_channels.items():
+	# specified units?
+	unit = cfg[2]
+	if unit == None:
+		# not specified, use input units
+		unit = csv_rdr.unit_dict[cfg[0]]
+		# strip brackets
+		unit = re.sub('\(|\)', '', unit)
+	# add channel target name to output list
+	out_dict[ch] = unit
+	# create averager for each analog channel
+	ana_avg[ch] = analog_average()
 
 # open output file
-csv_out = csv_writer(output_file, out_list)
+csv_out = csv_writer(output_file, out_dict)
 
 # process data
 while True:
@@ -53,6 +70,13 @@ while True:
 	line = csv_rdr.readline()
 	if line == None:
 		break
+
+	# sample analog channels
+	for ch, cfg in analog_channels.items():
+		# use converter
+		smpl = cfg[1]( line[ cfg[0] ] )
+		# sample
+		ana_avg[ch].sample(smpl)
 
 	# process sample in Crank Pos Analyzer
 	is_tdc = crank_pos.sample(line)
@@ -64,6 +88,10 @@ while True:
 	# prepare output data
 	csv_out.values['Time'] = line['Time']
 	csv_out.values['RPM'] = crank_pos.rpm
+
+	# prepare analog channels
+	for ch in analog_channels:
+		csv_out.values[ch] = ana_avg[ch].result()
 
 	# write to output file
 	csv_out.store()
