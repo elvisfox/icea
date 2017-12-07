@@ -13,3 +13,8 @@ crank_TDC_pulse			= 8				# pulse number where TDC position is located
 # list of camshaft channels
 cam_channels 			= ['D1']
 cam_polarity 			= 0
+
+# list of analog channels
+analog_channels = [
+	['', '']
+]

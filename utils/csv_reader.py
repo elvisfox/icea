@@ -15,8 +15,8 @@ class csv_reader():
         # read units
         cols = self.f.readline()
 
-        # store unit list
-        self.unit_list = cols.rstrip().split(',')
+        # store units
+        self.unit_dict = dict(zip(self.col_list, cols.rstrip().split(',')))
 
 
     # returns dictionary field = value

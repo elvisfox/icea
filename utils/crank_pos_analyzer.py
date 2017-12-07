@@ -37,15 +37,17 @@ class crank_pos_analyzer:
 		if self.crank_pc.period > long_pulse_th:
 			# long pulse detected, check pulse counter
 			if self.in_sync and self.crank_pc.counter != self.pulses_per_cyl:
-				raise Exception('Crank out of sync')
+				self.in_sync = False
+				print('Warning! Crank out of sync at t=' + str(self.crank_pc.became_act))
+				#raise Exception('Crank out of sync')
+			else:
+				#print('Fuck yea, long pulse')
+				
+				# reset Crank counter
+				self.crank_pc.reset()
 
-			#print('Fuck yea, long pulse')
-
-			# reset Crank counter
-			self.crank_pc.reset()
-
-			# in sync now
-			self.in_sync = True
+				# in sync now
+				self.in_sync = True
 
 		else:
 			# store pulse width
