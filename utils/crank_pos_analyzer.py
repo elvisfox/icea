@@ -38,6 +38,8 @@ class crank_pos_analyzer:
 		if not crank_pulse:
 			return False
 
+		# ***    ok, pulse detected    ***
+
 		# check pulse width
 		long_pulse_th = self.pulse_width * (1 + self.skipped_pulses/2.0)
 		if self.crank_pc.period > long_pulse_th:
@@ -63,6 +65,8 @@ class crank_pos_analyzer:
 		# check for TDC
 		if not( self.in_sync and self.crank_pc.counter == self.TDC_pulse - 1 ):
 			return False
+
+		# ***    ok, TDC detected    ***
 
 		# prev and current TDC time, used by calculations
 		this_time = self.crank_pc.became_act
@@ -94,9 +98,7 @@ class crank_pos_analyzer:
 			self.cylinder = 0
 			self.expect_cyl = 0
 
-		# compare with
-
-		# TDC detected, reset cams
+		# reset cams
 		for cam in self.cam_pcs:
 			cam.reset()
 
