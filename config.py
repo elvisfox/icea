@@ -27,6 +27,7 @@ cam_channels 			= ['D2', 'D3']
 cam_polarity 			= 0
 
 # glitch filter (how many samples can be considered as a glitch?)
+# this also enables median filter for analog signals
 glitch_filter = 2
 
 # dict of analog channels

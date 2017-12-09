@@ -50,6 +50,7 @@ out_dict = {
 }
 
 # init analog channels
+med_filt = ((glitch_filter + 1) // 2) * 2 + 1		# 0 -> 1, 1 -> 3, 2 -> 3, 3 -> 5, 4 -> 5, ...
 ana_avg = dict()
 for ch, cfg in analog_channels.items():
 	# specified units?
@@ -60,7 +61,7 @@ for ch, cfg in analog_channels.items():
 	# add channel target name to output list
 	out_dict[ch] = unit
 	# create averager for each analog channel
-	ana_avg[ch] = analog_average()
+	ana_avg[ch] = analog_average(med_filt)
 
 # open output file
 csv_out = csv_writer(output_file, out_dict)
