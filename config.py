@@ -22,13 +22,13 @@ crank_pulses_per_cyl 	= 10			# how many pulses does CKP produce per one cylinder
 crank_skipped_pulses	= 2				# how many pulses are skipped in between?
 crank_TDC_pulse			= 8				# pulse number where TDC position is located
 
-# list of camshaft channels
+# dict of camshaft channels
 #	cam name :			(src name, polarity, angle)
 cam_channels = {
-	'In B1':			('D2',	0,	40),
-	'In B2':			('D3',	0,	40),
-	'Ex B1':			('D4',	0,	40),
-	'Ex B2':			('D5',	0,	40),
+	'In B1':			('D2',	0,	48),
+	'In B2':			('D3',	0,	48),
+	'Ex B1':			('D4',	0,	48),
+	'Ex B2':			('D5',	0,	48),
 }
 
 # glitch filter (how many samples can be considered as a glitch?)
@@ -42,3 +42,8 @@ analog_channels = {
 	'TPS S1 B1':		('Channel B', 	passthru,		None ),
 }
 
+# advance monitors
+#	cam name :			(src name, polarity, angle)
+advance_mons = {
+	'Ign Adv 1':		('D0',	0,	610.3),
+}

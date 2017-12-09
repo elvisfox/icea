@@ -34,9 +34,16 @@ for name, cam in cam_channels.items():
 	cam_pcs.append(pulse_counter(cam[1], cam[0], glitch_filter))
 	cam_offsets.append(cam[2])
 
+# init pulse counters for advance monitors
+mon_pcs	= list()
+mon_offsets = list()
+for name, mon in advance_mons.items():
+	mon_pcs.append(pulse_counter(mon[1], mon[0], glitch_filter))
+	mon_offsets.append(mon[2])
+
 # init crankshaft position analyzer
 crank_pos = crank_pos_analyzer(crank_pc, cam_pcs, crank_pulses_per_cyl, crank_skipped_pulses, crank_TDC_pulse,
-								firing_order, time_unit, cam_offsets)
+								firing_order, time_unit, cam_offsets, mon_pcs, mon_offsets)
 
 # read until first active edge of crank
 first = False
@@ -81,6 +88,10 @@ for ch, cfg in analog_channels.items():
 for name, cam in cam_channels.items():
 	out_dict['Cam Angle ' + name] = 'deg'
 
+# add advance monitors to outputs
+for name, mon in advance_mons.items():
+	out_dict[name] = 'deg'
+
 # open output file
 csv_out = csv_writer(output_file, out_dict)
 
@@ -115,6 +126,10 @@ try:
 		for i, (name, cam) in enumerate(cam_channels.items()):
 			csv_out.values['Cam Angle ' + name] = crank_pos.cam_angles[i]
 
+		# add advance monitor data to outputs
+		for i, (name, mon) in enumerate(advance_mons.items()):
+			csv_out.values[name] = crank_pos.mon_adv[i]
+
 		# prepare analog channels
 		for ch in analog_channels:
 			csv_out.values[ch] = ana_avg[ch].result()
@@ -128,4 +143,3 @@ try:
 
 except KeyboardInterrupt:
 	print('\nInterrupted by user')
-
