@@ -15,10 +15,10 @@ except:
 	sys.exit(1)
 
 # init pulse counters for crankshaft and camshafts
-crank_pc = pulse_counter(crank_polarity, crank_channel)
+crank_pc = pulse_counter(crank_polarity, crank_channel, glitch_filter)
 cam_pcs = list()
 for cam in cam_channels:
-	cam_pcs.append(pulse_counter(cam_polarity, cam))
+	cam_pcs.append(pulse_counter(cam_polarity, cam, glitch_filter))
 
 # init crankshaft position analyzer
 crank_pos = crank_pos_analyzer(crank_pc, cam_pcs, crank_pulses_per_cyl, crank_skipped_pulses, crank_TDC_pulse,

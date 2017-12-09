@@ -16,18 +16,22 @@ firing_order = [
 ]
 
 # crankshaft position sensor
-crank_channel 			= 'D0'			# scope channel
+crank_channel 			= 'D1'			# scope channel
 crank_polarity 			= 1				# active level
 crank_pulses_per_cyl 	= 10			# how many pulses does CKP produce per one cylinder stroke?
 crank_skipped_pulses	= 2				# how many pulses are skipped in between?
 crank_TDC_pulse			= 8				# pulse number where TDC position is located
 
 # list of camshaft channels
-cam_channels 			= ['D1', 'D1']
+cam_channels 			= ['D2', 'D3']
 cam_polarity 			= 0
+
+# glitch filter (how many samples can be considered as a glitch?)
+glitch_filter = 2
 
 # dict of analog channels
 #    tgt name : 		(src name, 		converter,		units),
 analog_channels = {
-	'TPS S1 B1':		('Channel A', 	passthru,		None ),
+	'APP S1':			('Channel A', 	passthru,		None ),
+	'TPS S1 B1':		('Channel B', 	passthru,		None ),
 }
