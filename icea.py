@@ -29,12 +29,14 @@ else:
 # init pulse counters for crankshaft and camshafts
 crank_pc = pulse_counter(crank_polarity, crank_channel, glitch_filter)
 cam_pcs = list()
-for cam in cam_channels:
-	cam_pcs.append(pulse_counter(cam_polarity, cam, glitch_filter))
+cam_offsets = list()
+for name, cam in cam_channels.items():
+	cam_pcs.append(pulse_counter(cam[1], cam[0], glitch_filter))
+	cam_offsets.append(cam[2])
 
 # init crankshaft position analyzer
 crank_pos = crank_pos_analyzer(crank_pc, cam_pcs, crank_pulses_per_cyl, crank_skipped_pulses, crank_TDC_pulse,
-								firing_order, time_unit)
+								firing_order, time_unit, cam_offsets)
 
 # read until first active edge of crank
 first = False
@@ -75,6 +77,10 @@ for ch, cfg in analog_channels.items():
 	# create averager for each analog channel
 	ana_avg[ch] = analog_average(med_filt)
 
+# add cam advance to outputs
+for name, cam in cam_channels.items():
+	out_dict['Cam Angle ' + name] = 'deg'
+
 # open output file
 csv_out = csv_writer(output_file, out_dict)
 
@@ -104,6 +110,10 @@ try:
 		csv_out.values['Time'] = line['Time']
 		csv_out.values['RPM'] = crank_pos.rpm
 		csv_out.values['cyl'] = crank_pos.cylinder
+
+		# store cam advance to output data
+		for i, (name, cam) in enumerate(cam_channels.items()):
+			csv_out.values['Cam Angle ' + name] = crank_pos.cam_angles[i]
 
 		# prepare analog channels
 		for ch in analog_channels:

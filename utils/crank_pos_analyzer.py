@@ -4,6 +4,17 @@ import math
 
 from utils.pulse_counter import pulse_counter
 
+def calc_angle(t, t1, a1, t2, a2):
+	# ensure a2 > a1
+	if a2 < a1:
+		a2 += 720
+
+	# calculate angle by proportion
+	a = (a2 - a1) * (t - t1) / (t2 - t1)
+
+	# return
+	return a % 720
+
 class crank_pos_analyzer:
 	def unsync(self):
 		self.in_sync = False
@@ -11,7 +22,7 @@ class crank_pos_analyzer:
 		self.cylinder = 0
 		self.expect_cyl = 0
 
-	def __init__(self, crank_pc, cam_pcs, pulses_per_cyl, skipped_pulses, TDC_pulse, firing_order, time_unit):
+	def __init__(self, crank_pc, cam_pcs, pulses_per_cyl, skipped_pulses, TDC_pulse, firing_order, time_unit, cam_offsets):
 		# configuration
 		self.crank_pc = crank_pc
 		self.cam_pcs = cam_pcs
@@ -21,19 +32,24 @@ class crank_pos_analyzer:
 		self.firing_order = firing_order
 		self.no_of_cyl = len(firing_order)
 		self.time_unit = time_unit
+		self.cam_offsets = cam_offsets
 
 		# state
 		self.unsync()
 		self.prev_TDC_time = 0
 		self.rpm = 0
+		self.prev_angle = 0
+		self.cam_time = [0] * len(cam_pcs)
+		self.cam_angles = [0] * len(cam_pcs)
 
 	# process states from CSV dictionary
 	# return True if TDC is detected
-	def sample(self, line):							# TODO: identify cylinders, check firing order, calculate cam advance
+	def sample(self, line):
 		# run pulse counters
 		crank_pulse = self.crank_pc.sample(line)
-		for cam in self.cam_pcs:
-			cam.sample(line)		# TODO: Store cam pulse positions
+		for i, cam in enumerate(self.cam_pcs):
+			if cam.sample(line) and cam.counter == 1:
+				self.cam_time[i] = cam.became_act 	# store cam timings
 
 		# proceed only if crank pulse detected
 		if not crank_pulse:
@@ -98,6 +114,19 @@ class crank_pos_analyzer:
 			print('Warning! Cylinder not identified!')
 			self.cylinder = 0
 			self.expect_cyl = 0
+
+		# futher calculations are only valid if cylinder is identified
+		if self.cylinder > 0:
+			# calculate current crank angle
+			crank_angle = 720 / self.no_of_cyl * self.cylinder
+
+			# calculate cam advance
+			for i, t in enumerate(self.cam_time):
+				if t >= prev_time:					# has cam pulse arrived on this stroke?
+					self.cam_angles[i] =  calc_angle(t, prev_time, 0, this_time, 120) - self.cam_offsets[i]	# absolute angle does not matter here
+
+			# store angle
+			self.prev_angle = crank_angle
 
 		# reset cams
 		for cam in self.cam_pcs:
