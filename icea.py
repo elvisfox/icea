@@ -11,7 +11,19 @@ from utils.crank_pos_analyzer import crank_pos_analyzer
 try:
 	csv_rdr = csv_reader(sys.argv[1])
 except:
-	print('Failed to open input file.\n')
+	print('Failed to open input file.')
+	sys.exit(1)
+
+# find the time unit
+time_unit_str = csv_rdr.unit_dict['Time']
+if time_unit_str == 's':
+	time_unit = 1.0
+elif time_unit_str == 'ms':
+	time_unit = 1e-3
+elif time_unit_str == 'us':
+	time_unit = 1e-6
+else:
+	print('Unknown time unit: ' + time_unit_str)
 	sys.exit(1)
 
 # init pulse counters for crankshaft and camshafts
@@ -22,7 +34,7 @@ for cam in cam_channels:
 
 # init crankshaft position analyzer
 crank_pos = crank_pos_analyzer(crank_pc, cam_pcs, crank_pulses_per_cyl, crank_skipped_pulses, crank_TDC_pulse,
-								firing_order)
+								firing_order, time_unit)
 
 # read until first active edge of crank
 first = False
@@ -44,7 +56,7 @@ print('First TDC found at time ' + str(crank_pos.prev_TDC_time))
 
 # prepare dict of output fields : units
 out_dict = { 
-	'Time' : 'ms', 
+	'Time' : time_unit_str, 
 	'RPM' : None,
 	'cyl' : None,
 }
@@ -67,38 +79,43 @@ for ch, cfg in analog_channels.items():
 csv_out = csv_writer(output_file, out_dict)
 
 # process data
-while True:
-	# read new line, break if EOF
-	line = csv_rdr.readline()
-	if line == None:
-		break
+try:
+	while True:
+		# read new line, break if EOF
+		line = csv_rdr.readline()
+		if line == None:
+			break
 
-	# sample analog channels
-	for ch, cfg in analog_channels.items():
-		# use converter
-		smpl = cfg[1]( line[ cfg[0] ] )
-		# sample
-		ana_avg[ch].sample(smpl)
+		# sample analog channels
+		for ch, cfg in analog_channels.items():
+			# use converter
+			smpl = cfg[1]( line[ cfg[0] ] )
+			# sample
+			ana_avg[ch].sample(smpl)
 
-	# process sample in Crank Pos Analyzer
-	is_tdc = crank_pos.sample(line)
+		# process sample in Crank Pos Analyzer
+		is_tdc = crank_pos.sample(line)
 
-	# skip until TDC is detected
-	if not is_tdc:
-		continue
+		# skip until TDC is detected
+		if not is_tdc:
+			continue
 
-	# prepare output data
-	csv_out.values['Time'] = line['Time']
-	csv_out.values['RPM'] = crank_pos.rpm
-	csv_out.values['cyl'] = crank_pos.cylinder
+		# prepare output data
+		csv_out.values['Time'] = line['Time']
+		csv_out.values['RPM'] = crank_pos.rpm
+		csv_out.values['cyl'] = crank_pos.cylinder
 
-	# prepare analog channels
-	for ch in analog_channels:
-		csv_out.values[ch] = ana_avg[ch].result()
+		# prepare analog channels
+		for ch in analog_channels:
+			csv_out.values[ch] = ana_avg[ch].result()
 
-	# write to output file
-	csv_out.store()
-	sys.stdout.write('Processing time ' + str(line['Time']) + ' ' + csv_rdr.unit_dict['Time'] + '      \r')
+		# write to output file
+		csv_out.store()
+		sys.stdout.write('Processing time ' + str(line['Time']) + ' ' + time_unit_str + '      \r')
 
-# finalize stuff
-print('\nSuccess')
+	# finalize stuff
+	print('\nSuccess')
+
+except KeyboardInterrupt:
+	print('\nInterrupted by user')
+

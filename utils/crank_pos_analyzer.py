@@ -11,7 +11,7 @@ class crank_pos_analyzer:
 		self.cylinder = 0
 		self.expect_cyl = 0
 
-	def __init__(self, crank_pc, cam_pcs, pulses_per_cyl, skipped_pulses, TDC_pulse, firing_order):
+	def __init__(self, crank_pc, cam_pcs, pulses_per_cyl, skipped_pulses, TDC_pulse, firing_order, time_unit):
 		# configuration
 		self.crank_pc = crank_pc
 		self.cam_pcs = cam_pcs
@@ -20,6 +20,7 @@ class crank_pos_analyzer:
 		self.TDC_pulse = TDC_pulse
 		self.firing_order = firing_order
 		self.no_of_cyl = len(firing_order)
+		self.time_unit = time_unit
 
 		# state
 		self.unsync()
@@ -73,7 +74,7 @@ class crank_pos_analyzer:
 		prev_time = self.prev_TDC_time
 
 		# calculate rpm
-		self.rpm = 60e3 / ((this_time - prev_time) * self.no_of_cyl / 2)
+		self.rpm = 60 / (self.time_unit * ((this_time - prev_time) * self.no_of_cyl / 2))
 
 		# count cam pulses
 		cam_pulses = list()
